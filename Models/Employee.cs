@@ -9,11 +9,11 @@ namespace Company_Management_Panel_CSharp.Models
 
         [Required(ErrorMessage = "First name is required")]
         [StringLength(50, ErrorMessage = "First name can't be longer than 50 characters")]
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Last name is required")]
         [StringLength(50, ErrorMessage = "Last name can't be longer than 50 characters")]
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public string? Email { get; set; }

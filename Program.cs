@@ -43,6 +43,7 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+// changes
 
 app.MapControllerRoute(
     name: "default",
