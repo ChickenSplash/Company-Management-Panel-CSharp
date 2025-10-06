@@ -30,19 +30,17 @@ namespace Company_Management_Panel_CSharp.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Logo")
-                        .IsRequired()
+                    b.Property<string>("LogoPath")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Website")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -54,7 +52,7 @@ namespace Company_Management_Panel_CSharp.Migrations
                         {
                             Id = 1,
                             Email = "info@techcorp.com",
-                            Logo = "placeholder.png",
+                            LogoPath = "placeholder.png",
                             Name = "Tech Corp",
                             Website = "https://techcorp.com"
                         },
@@ -62,7 +60,7 @@ namespace Company_Management_Panel_CSharp.Migrations
                         {
                             Id = 2,
                             Email = "contact@healthinc.com",
-                            Logo = "placeholder.png",
+                            LogoPath = "placeholder.png",
                             Name = "Health Inc",
                             Website = "https://healthinc.com"
                         });
@@ -80,19 +78,19 @@ namespace Company_Management_Panel_CSharp.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");

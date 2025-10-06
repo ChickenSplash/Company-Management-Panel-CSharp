@@ -13,10 +13,12 @@ namespace Company_Management_Panel_CSharp.Controllers
     public class CompaniesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHost;
 
-        public CompaniesController(ApplicationDbContext context)
+        public CompaniesController(ApplicationDbContext context, IWebHostEnvironment webHost)
         {
             _context = context;
+            _webHost = webHost;
         }
 
         // GET: Companies
@@ -54,7 +56,7 @@ namespace Company_Management_Panel_CSharp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Email,Logo,Website")] Company company)
+        public async Task<IActionResult> Create(Company company, IFormFile Logo)
         {
             if (ModelState.IsValid)
             {
@@ -86,7 +88,7 @@ namespace Company_Management_Panel_CSharp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,Logo,Website")] Company company)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,LogoPath,Website")] Company company)
         {
             if (id != company.Id)
             {

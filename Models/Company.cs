@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Company_Management_Panel_CSharp.Models
 {
@@ -14,8 +15,11 @@ namespace Company_Management_Panel_CSharp.Models
 
         [EmailAddress(ErrorMessage = "Invalid email format")]
         public string? Email { get; set; }
-        
-        public string? Logo { get; set; }
+
+        [NotMapped]
+        public IFormFile? Logo { get; set; }
+
+        public string? LogoPath { get; set; }
 
         [Url(ErrorMessage = "Invalid URL format")]
         public string? Website { get; set; }

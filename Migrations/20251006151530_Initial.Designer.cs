@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Company_Management_Panel_CSharp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251003084156_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251006151530_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,24 +33,40 @@ namespace Company_Management_Panel_CSharp.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Logo")
-                        .IsRequired()
+                    b.Property<string>("LogoPath")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Website")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
                     b.ToTable("Companies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "info@techcorp.com",
+                            LogoPath = "placeholder.png",
+                            Name = "Tech Corp",
+                            Website = "https://techcorp.com"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Email = "contact@healthinc.com",
+                            LogoPath = "placeholder.png",
+                            Name = "Health Inc",
+                            Website = "https://healthinc.com"
+                        });
                 });
 
             modelBuilder.Entity("Company_Management_Panel_CSharp.Models.Employee", b =>
@@ -65,19 +81,19 @@ namespace Company_Management_Panel_CSharp.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -85,6 +101,35 @@ namespace Company_Management_Panel_CSharp.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("Employees");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CompanyId = 1,
+                            Email = "alice@techcorp.com",
+                            FirstName = "Alice",
+                            LastName = "Johnson",
+                            PhoneNumber = "07775845772"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CompanyId = 1,
+                            Email = "bob@techcorp.com",
+                            FirstName = "Bob",
+                            LastName = "Smith",
+                            PhoneNumber = "07830018563"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CompanyId = 2,
+                            Email = "carol@healthinc.com",
+                            FirstName = "Carol",
+                            LastName = "Davis",
+                            PhoneNumber = "07774750114"
+                        });
                 });
 
             modelBuilder.Entity("Company_Management_Panel_CSharp.Models.Employee", b =>

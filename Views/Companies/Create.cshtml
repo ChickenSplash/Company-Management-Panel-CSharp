@@ -9,7 +9,7 @@
 <h4>Company</h4>
 <hr />
 
-<form asp-action="Create">
+<form asp-action="Create" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     
     <div class="row">
@@ -28,7 +28,7 @@
     <div class="row mb-3">
         <div class="form-group col-md-6">
             <label asp-for="Logo" class="control-label">Logo</label>
-            <input asp-for="Logo" class="form-control" />
+            <input asp-for="Logo" type="file" class="form-control" />
             <span asp-validation-for="Logo" class="text-danger"></span>
         </div>
         <div class="form-group col-md-6">
