@@ -34,7 +34,7 @@
                         <img 
                             src="@(string.IsNullOrEmpty(item.LogoPath) ? Url.Content("~/images/placeholder-logo.jpg") : Url.Content("~/images/" + item.LogoPath))"
                             alt="Company Logo"
-                            class="rounded-circle border border-1 d-block" 
+                            class="rounded-circle border border-1 d-block object-fit-cover"
                             style="width: 40px; height: 40px;" 
                         />
                     </td>

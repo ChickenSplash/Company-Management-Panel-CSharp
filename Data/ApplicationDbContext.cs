@@ -19,8 +19,8 @@ namespace Company_Management_Panel_CSharp.Data
 
             // Seed Companies
             modelBuilder.Entity<Company>().HasData(
-                new Company { Id = 1, Name = "Tech Corp", Email = "info@techcorp.com", LogoPath ="placeholder.png", Website = "https://techcorp.com" },
-                new Company { Id = 2, Name = "Health Inc", Email = "contact@healthinc.com", LogoPath = "placeholder.png", Website = "https://healthinc.com" }
+                new Company { Id = 1, Name = "Tech Corp", Email = "info@techcorp.com", LogoPath = null, Website = "https://techcorp.com" },
+                new Company { Id = 2, Name = "Health Inc", Email = "contact@healthinc.com", LogoPath = null, Website = "https://healthinc.com" }
             );
 
             // Seed Employees

@@ -1,12 +1,14 @@
-﻿using System;
+﻿using Company_Management_Panel_CSharp.Data;
+using Company_Management_Panel_CSharp.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Company_Management_Panel_CSharp.Data;
-using Company_Management_Panel_CSharp.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Company_Management_Panel_CSharp.Controllers
 {
@@ -36,6 +38,7 @@ namespace Company_Management_Panel_CSharp.Controllers
             }
 
             var company = await _context.Companies
+                .Include(c => c.Employees)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (company == null)
             {
@@ -58,44 +61,37 @@ namespace Company_Management_Panel_CSharp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Email,Logo,Website")] Company company)
         {
-            if (company.Logo != null && company.Logo.Length > 0)
-            {
-                var permittedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-
-                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
-                if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
-                {
-                    ModelState.AddModelError("Logo", "Only image files (.jpg, .png, .gif, .bmp, .webp) are allowed.");
-                    return View(company);
-                }
-
-                if (!company.Logo.ContentType.StartsWith("image/"))
-                {
-                    ModelState.AddModelError("Logo", "Invalid file type.");
-                    return View(company);
-                }
-
-                // --- Generate unique filename ---
-                var fileName = $"{Guid.NewGuid()}{ext}";
-
-                // --- Combine path to wwwroot/images directory ---
-                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-
-                // --- Combine full path ---
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                // --- Save the file ---
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await company.Logo.CopyToAsync(stream);
-                }
-
-                // --- Save relative path for later use (e.g. in <img src="/images/filename.jpg">) ---
-                company.LogoPath = fileName;
-            }
 
             if (ModelState.IsValid)
-            {  
+            {
+                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
+                
+                if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                {
+                    ModelState.AddModelError("Logo", errorMessage);
+                    return View(company);
+                }
+                else
+                {
+                    // --- Generate unique filename ---
+                    var fileName = $"{Guid.NewGuid()}{ext}";
+
+                    // --- Combine path to wwwroot/images directory ---
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+                    // --- Combine full path ---
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    // --- Save the file ---
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await company.Logo.CopyToAsync(stream);
+                    }
+
+                    // --- Save relative path for the database
+                    company.LogoPath = fileName;
+                }
+
                 _context.Add(company);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -124,7 +120,7 @@ namespace Company_Management_Panel_CSharp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,LogoPath,Website")] Company company)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,Logo,Website")] Company company)
         {
             if (id != company.Id)
             {
@@ -133,9 +129,39 @@ namespace Company_Management_Panel_CSharp.Controllers
 
             if (ModelState.IsValid)
             {
+                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
+                
+                if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                {
+                    ModelState.AddModelError("Logo", errorMessage);
+                    return View(company);
+                } 
+                else
+                {
+                    // Retrieve the existing company from the database
+                    var existingCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+                    if (existingCompany == null)
+                    {
+                        return NotFound();
+                    }
+
+                    DeleteLogoFile(existingCompany.LogoPath);
+
+                    var fileName = $"{Guid.NewGuid()}{ext}";
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await company.Logo.CopyToAsync(stream);
+                    }
+
+                    company.LogoPath = fileName;
+                }
+
                 try
                 {
-                    _context.Update(company);
+                    _context.Entry(company).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
@@ -189,6 +215,33 @@ namespace Company_Management_Panel_CSharp.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        private bool IsValidImage(IFormFile? file, out string errorMessage, string? ext)
+        {
+            errorMessage = string.Empty;
+
+            if (file == null || file.Length == 0)
+            {
+                errorMessage = "No file uploaded.";
+                return false;
+            }
+
+            var permittedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+            
+            if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
+            {
+                errorMessage = "Only image files (.jpg, .png, .gif, .bmp, .webp) are allowed.";
+                return false;
+            }
+
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                errorMessage = "Invalid file type.";
+                return false;
+            }
+
+            return true;
         }
 
         private void DeleteLogoFile(string? logoPath)
