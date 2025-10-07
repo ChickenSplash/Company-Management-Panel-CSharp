@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files
+!placeholder-logo.jpg
+!placeholder-profile-picture.jpg
+
+# Also don't ignore the .gitignore itself
+!.gitignore

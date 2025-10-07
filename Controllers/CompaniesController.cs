@@ -56,10 +56,46 @@ namespace Company_Management_Panel_CSharp.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Company company, IFormFile Logo)
+        public async Task<IActionResult> Create([Bind("Id,Name,Email,Logo,Website")] Company company)
         {
-            if (ModelState.IsValid)
+            if (company.Logo != null && company.Logo.Length > 0)
             {
+                var permittedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
+
+                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
+                if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
+                {
+                    ModelState.AddModelError("Logo", "Only image files (.jpg, .png, .gif, .bmp, .webp) are allowed.");
+                    return View(company);
+                }
+
+                if (!company.Logo.ContentType.StartsWith("image/"))
+                {
+                    ModelState.AddModelError("Logo", "Invalid file type.");
+                    return View(company);
+                }
+
+                // --- Generate unique filename ---
+                var fileName = $"{Guid.NewGuid()}{ext}";
+
+                // --- Combine path to wwwroot/images directory ---
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+                // --- Combine full path ---
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                // --- Save the file ---
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await company.Logo.CopyToAsync(stream);
+                }
+
+                // --- Save relative path for later use (e.g. in <img src="/images/filename.jpg">) ---
+                company.LogoPath = fileName;
+            }
+
+            if (ModelState.IsValid)
+            {  
                 _context.Add(company);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -144,11 +180,26 @@ namespace Company_Management_Panel_CSharp.Controllers
             var company = await _context.Companies.FindAsync(id);
             if (company != null)
             {
+                // Take company.LogoPath (e.g. "a124303a-b0a9-480b-932c-4825df20add0.png") and delete the file found inside of wwwroot/images/
+                // Do nothing if company.LogoPath doesnt exist
+                DeleteLogoFile(company.LogoPath);
+
                 _context.Companies.Remove(company);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        private void DeleteLogoFile(string? logoPath)
+        {
+            if (string.IsNullOrEmpty(logoPath)) return;
+
+            var fileName = Path.GetFileName(logoPath);
+            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", fileName);
+
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
         }
 
         private bool CompanyExists(int id)
