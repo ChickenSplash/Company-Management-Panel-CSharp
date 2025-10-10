@@ -40,6 +40,7 @@ namespace Company_Management_Panel_CSharp.Controllers
             var company = await _context.Companies
                 .Include(c => c.Employees)
                 .FirstOrDefaultAsync(m => m.Id == id);
+            
             if (company == null)
             {
                 return NotFound();
@@ -61,18 +62,19 @@ namespace Company_Management_Panel_CSharp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Email,Logo,Website")] Company company)
         {
-
             if (ModelState.IsValid)
             {
-                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
-                
-                if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                string? ext = null;
+                if (company.Logo != null)
                 {
-                    ModelState.AddModelError("Logo", errorMessage);
-                    return View(company);
-                }
-                else
-                {
+                    ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
+
+                    if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                    {
+                        ModelState.AddModelError("Logo", errorMessage);
+                        return View(company);
+                    }
+
                     // --- Generate unique filename ---
                     var fileName = $"{Guid.NewGuid()}{ext}";
 
@@ -129,34 +131,47 @@ namespace Company_Management_Panel_CSharp.Controllers
 
             if (ModelState.IsValid)
             {
-                var ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
-                
-                if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                string? ext = null;
+                if (company.Logo != null)
                 {
-                    ModelState.AddModelError("Logo", errorMessage);
-                    return View(company);
-                } 
+                    ext = Path.GetExtension(company.Logo.FileName).ToLowerInvariant();
+
+                    if (!IsValidImage(company.Logo, out var errorMessage, ext))
+                    {
+                        ModelState.AddModelError("Logo", errorMessage);
+                        return View(company);
+                    }
+                    else
+                    {
+                        // Retrieve the existing company from the database
+                        var existingCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+                        if (existingCompany == null)
+                        {
+                            return NotFound();
+                        }
+
+                        DeleteLogoFile(existingCompany.LogoPath);
+
+                        var fileName = $"{Guid.NewGuid()}{ext}";
+                        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                        var filePath = Path.Combine(uploadsFolder, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await company.Logo.CopyToAsync(stream);
+                        }
+
+                        company.LogoPath = fileName;
+                    }
+                }
                 else
                 {
-                    // Retrieve the existing company from the database
+                    // If no new logo uploaded, preserve the existing LogoPath
                     var existingCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
-                    if (existingCompany == null)
+                    if (existingCompany != null)
                     {
-                        return NotFound();
+                        company.LogoPath = existingCompany.LogoPath;
                     }
-
-                    DeleteLogoFile(existingCompany.LogoPath);
-
-                    var fileName = $"{Guid.NewGuid()}{ext}";
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                    var filePath = Path.Combine(uploadsFolder, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await company.Logo.CopyToAsync(stream);
-                    }
-
-                    company.LogoPath = fileName;
                 }
 
                 try
@@ -189,7 +204,9 @@ namespace Company_Management_Panel_CSharp.Controllers
             }
 
             var company = await _context.Companies
+                .Include(c => c.Employees)
                 .FirstOrDefaultAsync(m => m.Id == id);
+           
             if (company == null)
             {
                 return NotFound();
